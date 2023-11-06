@@ -39,9 +39,9 @@ Results:
 | test/RS256_v1.t.sol:RS256Dev contract |                 |       |        |       |         |
 | ------------------------------------- | --------------- | ----- | ------ | ----- | ------- |
 | Deployment Cost                       | Deployment Size |       |        |       |         |
-| 220669                                | 1130            |       |        |       |         |
+| 209057                                | 1072            |       |        |       |         |
 | Function Name                         | min             | avg   | median | max   | # calls |
-| verify                                | 10883           | 10883 | 10883  | 10883 | 1       |
+| verify                                | 10787           | 10787 | 10787  | 10787 | 1       |
 
 
 
