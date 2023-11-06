@@ -1,66 +1,15 @@
-## Foundry
+# RS256 Signature Verification
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+This repository contains an implementation of the RS256 signature verification algorithm as specified in [RFC 8017 Section 8.1.2](https://datatracker.ietf.org/doc/html/rfc8017#section-8.1.2). The implementation is written in Solidity and is designed for use within smart contracts on the Ethereum blockchain.
 
-Foundry consists of:
+## Overview
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+RS256 is a signature algorithm that uses RSA (Rivest-Shamir-Adleman) for signing/verifying. This implementation specifically handles the signature verification part using SHA-256 for hashing.
 
-## Documentation
+## Implementation
 
-https://book.getfoundry.sh/
+The code follows the steps outlined in RFC 8017 for the RSASSA-PKCS1-v1_5 signature verification operation. It takes a signature, message, and public key as inputs and verifies whether the signature is valid for the given message using the provided public key.
 
-## Usage
+## License
 
-### Build
-
-```shell
-$ forge build
-```
-
-### Test
-
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
