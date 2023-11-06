@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
+
 // import {Test, console2} from "forge-std/Test.sol";
 
-contract RS256 {
+library RS256V1 {
     function RSAVP1(
         bytes memory n,
         bytes memory e,
         bytes memory S
-    ) internal view returns (bytes memory m) {
+    ) private view returns (bytes memory m) {
         /*
             Steps:
      
@@ -118,12 +119,12 @@ contract RS256 {
      * @param M message whose signature is to be verified, an octet string
      * @param S signature to be verified, an octet string of length k, where k is the length in octets of the RSA modulus n
      */
-    function verify(
+    function RSASSA_PSS_VERIFY(
         bytes memory n,
         bytes memory e,
         bytes memory M,
         bytes memory S
-    ) public view returns (bool) {
+    ) internal view returns (bool) {
         uint256 k = n.length;
         // 1. Length checking: If the length of S is not k octets, output "invalid signature" and stop.
         if (k != S.length) {
@@ -134,19 +135,7 @@ contract RS256 {
         /* 
                 a.  Convert the signature S to an integer signature representative s (see Section 4.2):
                     s = OS2IP (S).
-            */
-
-        /* 
-                b.  Apply the RSAVP1 verification primitive (Section 5.2.2) to
-                    the RSA public key (n, e) and the signature representative
-                    s to produce an integer message representative m:
-                    m = RSAVP1 ((n, e), s).
-                    If RSAVP1 outputs "signature representative out of range",output "invalid signature" and stop.
-            */
-        bytes memory EM = RSAVP1(n, e, S);
-        if (EM.length != k) {
-            return false;
-        }
+        */
         /*
             c.  Convert the message representative m to an encoded message
                   EM of length k octets (see Section 4.1):
@@ -224,6 +213,121 @@ contract RS256 {
         uint256 PS_ByteLen = k - 54; //k - 19 - 32 - 3, 32: SHA-256 hash length
         uint256 _cursor;
         assembly {
+            let EM
+
+            // inline RSAVP1 begin
+            /* 
+               b.  Apply the RSAVP1 verification primitive (Section 5.2.2) to
+                   the RSA public key (n, e) and the signature representative
+                   s to produce an integer message representative m:
+                   m = RSAVP1 ((n, e), s).
+                   If RSAVP1 outputs "signature representative out of range",output "invalid signature" and stop.
+            */
+
+            // bytes memory EM = RSAVP1(n, e, S);
+            {
+                /*
+                    Steps:
+            
+                    1.  If the signature representative s is not between 0 and n - 1,
+                        output "signature representative out of range" and stop.
+            
+                    2.  Let m = s^e mod n.
+            
+                    3.  Output m.
+                */
+
+                // To simplify the calculations, k must be an integer multiple of 32.
+                if mod(k, 0x20) {
+                    revert(0x00, 0x00)
+                }
+                let _k := div(k, 0x20)
+                for {
+                    let i := 0
+                } lt(i, _k) {
+                    i := add(i, 0x01)
+                } {
+                    // 1. If the signature representative S is not between 0 and n - 1, output "signature representative out of range" and stop.
+                    let _n := mload(add(add(n, 0x20), mul(i, 0x20)))
+                    let _s := mload(add(add(S, 0x20), mul(i, 0x20)))
+                    if lt(_s, _n) {
+                        // break
+                        i := k
+                    }
+                    if gt(_s, _n) {
+                        // signature representative out of range
+                        revert(0x00, 0x00)
+                    }
+                    if eq(_s, _n) {
+                        if eq(i, sub(_k, 0x01)) {
+                            // signature representative out of range
+                            revert(0x00, 0x00)
+                        }
+                    }
+                }
+                // 2.  Let m = s^e mod n.
+                let e_length := mload(e)
+                EM := mload(0x40)
+                mstore(EM, k)
+                mstore(add(EM, 0x20), e_length)
+                mstore(add(EM, 0x40), k)
+                let _cursor_inline := add(EM, 0x60)
+                // copy s begin
+                for {
+                    let i := 0
+                } lt(i, k) {
+                    i := add(i, 0x20)
+                } {
+                    mstore(_cursor_inline, mload(add(add(S, 0x20), i)))
+                    _cursor_inline := add(_cursor_inline, 0x20)
+                }
+                // copy s end
+
+                // copy e begin
+                // To simplify the calculations, e must be an integer multiple of 32.
+                if mod(e_length, 0x20) {
+                    revert(0x00, 0x00)
+                }
+                for {
+                    let i := 0
+                } lt(i, e_length) {
+                    i := add(i, 0x20)
+                } {
+                    mstore(_cursor_inline, mload(add(add(e, 0x20), i)))
+                    _cursor_inline := add(_cursor_inline, 0x20)
+                }
+                // copy e end
+
+                // copy n begin
+                for {
+                    let i := 0
+                } lt(i, k) {
+                    i := add(i, 0x20)
+                } {
+                    mstore(_cursor_inline, mload(add(add(n, 0x20), i)))
+                    _cursor_inline := add(_cursor_inline, 0x20)
+                }
+                // copy n end
+
+                // Call the precompiled contract 0x05 = ModExp
+                if iszero(
+                    staticcall(
+                        not(0),
+                        0x05,
+                        EM,
+                        _cursor_inline,
+                        add(EM, 0x20),
+                        k
+                    )
+                ) {
+                    revert(0x00, 0x00)
+                }
+                mstore(EM, k)
+                mstore(0x40, add(add(EM, 0x20), k))
+            }
+
+            // inline RSAVP1 end
+
             if sub(
                 mload(add(EM, 0x20)),
                 0x0001ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff

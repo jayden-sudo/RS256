@@ -2,13 +2,24 @@
 pragma solidity ^0.8.13;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {RS256} from "../src/RS256_v1.sol";
+import {RS256V1} from "../src/RS256_v1.sol";
+
+contract RS256Dev {
+    function verify(
+        bytes memory n,
+        bytes memory e,
+        bytes memory M,
+        bytes memory S
+    ) external view returns (bool) {
+        return RS256V1.RSASSA_PSS_VERIFY(n, e, M, S);
+    }
+}
 
 contract RS256_v1Test is Test {
-    RS256 public _RS256;
+    RS256Dev public _RS256Dev;
 
     function setUp() public {
-        _RS256 = new RS256();
+        _RS256Dev = new RS256Dev();
     }
 
     function test_rs256() public {
@@ -39,7 +50,7 @@ contract RS256_v1Test is Test {
             hex"82be6f9069d6bd1790e7261f85ca32b1934dc1c82345af729c4023401d1e2949";
 
         uint256 gas_before = gasleft();
-        bool isValid = _RS256.verify(n, e, Msg, S);
+        bool isValid = _RS256Dev.verify(n, e, Msg, S);
         uint256 gas_after = gasleft();
         assertEq(isValid, true);
         console2.log("gas used: ", gas_before - gas_after);
