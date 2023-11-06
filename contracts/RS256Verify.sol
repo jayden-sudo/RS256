@@ -1,115 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-library RS256V1 {
-    function RSAVP1(
-        bytes memory n,
-        bytes memory e,
-        bytes memory S
-    ) private view returns (bytes memory m) {
-        /*
-            Steps:
-     
-            1.  If the signature representative s is not between 0 and n - 1,
-                output "signature representative out of range" and stop.
-     
-            2.  Let m = s^e mod n.
-     
-            3.  Output m.
-        */
-        assembly {
-            let k := mload(n) // RSA modulus n
-            // To simplify the calculations, k must be an integer multiple of 32.
-            if mod(k, 0x20) {
-                revert(0x00, 0x00)
-            }
-            let _k := div(k, 0x20)
-            for {
-                let i := 0
-            } lt(i, _k) {
-                i := add(i, 0x01)
-            } {
-                // 1. If the signature representative S is not between 0 and n - 1, output "signature representative out of range" and stop.
-                let _n := mload(add(add(n, 0x20), mul(i, 0x20)))
-                let _s := mload(add(add(S, 0x20), mul(i, 0x20)))
-                if lt(_s, _n) {
-                    // break
-                    i := k
-                }
-                if gt(_s, _n) {
-                    // signature representative out of range
-                    revert(0x00, 0x00)
-                }
-                if eq(_s, _n) {
-                    if eq(i, sub(_k, 0x01)) {
-                        // signature representative out of range
-                        revert(0x00, 0x00)
-                    }
-                }
-            }
-            // 2.  Let m = s^e mod n.
-            let e_length := mload(e)
-            let pointer := mload(0x40)
-            mstore(pointer, k)
-            mstore(add(pointer, 0x20), e_length)
-            mstore(add(pointer, 0x40), k)
-            let _cursor := add(pointer, 0x60)
-            // copy s begin
-            for {
-                let i := 0
-            } lt(i, k) {
-                i := add(i, 0x20)
-            } {
-                mstore(_cursor, mload(add(add(S, 0x20), i)))
-                _cursor := add(_cursor, 0x20)
-            }
-            // copy s end
-
-            // copy e begin
-            // To simplify the calculations, e must be an integer multiple of 32.
-            if mod(e_length, 0x20) {
-                revert(0x00, 0x00)
-            }
-            for {
-                let i := 0
-            } lt(i, e_length) {
-                i := add(i, 0x20)
-            } {
-                mstore(_cursor, mload(add(add(e, 0x20), i)))
-                _cursor := add(_cursor, 0x20)
-            }
-            // copy e end
-
-            // copy n begin
-            for {
-                let i := 0
-            } lt(i, k) {
-                i := add(i, 0x20)
-            } {
-                mstore(_cursor, mload(add(add(n, 0x20), i)))
-                _cursor := add(_cursor, 0x20)
-            }
-            // copy n end
-
-            // Call the precompiled contract 0x05 = ModExp
-            if iszero(
-                staticcall(
-                    not(0),
-                    0x05,
-                    pointer,
-                    _cursor,
-                    add(pointer, 0x20),
-                    k
-                )
-            ) {
-                revert(0x00, 0x00)
-            }
-            mstore(pointer, k)
-            mstore(0x40, add(add(pointer, 0x20), k))
-            m := pointer
-        }
-    }
-
+library RS256Verify {
     /**
      *
      * @param n signer's RSA public key - n
@@ -211,8 +103,6 @@ library RS256V1 {
         uint256 PS_ByteLen = k - 54; //k - 19 - 32 - 3, 32: SHA-256 hash length
         uint256 _cursor;
         assembly {
-            let EM
-
             // inline RSAVP1 begin
             /* 
                b.  Apply the RSAVP1 verification primitive (Section 5.2.2) to
@@ -223,6 +113,8 @@ library RS256V1 {
             */
 
             // bytes memory EM = RSAVP1(n, e, S);
+
+            let EM
             {
                 /*
                     Steps:
@@ -237,7 +129,8 @@ library RS256V1 {
 
                 // To simplify the calculations, k must be an integer multiple of 32.
                 if mod(k, 0x20) {
-                    revert(0x00, 0x00)
+                    mstore(0x00, false)
+                    return(0x00, 0x20)
                 }
                 let _k := div(k, 0x20)
                 for {
@@ -254,12 +147,14 @@ library RS256V1 {
                     }
                     if gt(_s, _n) {
                         // signature representative out of range
-                        revert(0x00, 0x00)
+                        mstore(0x00, false)
+                        return(0x00, 0x20)
                     }
                     if eq(_s, _n) {
                         if eq(i, sub(_k, 0x01)) {
                             // signature representative out of range
-                            revert(0x00, 0x00)
+                            mstore(0x00, false)
+                            return(0x00, 0x20)
                         }
                     }
                 }
@@ -284,7 +179,8 @@ library RS256V1 {
                 // copy e begin
                 // To simplify the calculations, e must be an integer multiple of 32.
                 if mod(e_length, 0x20) {
-                    revert(0x00, 0x00)
+                    mstore(0x00, false)
+                    return(0x00, 0x20)
                 }
                 for {
                     let i := 0
@@ -318,7 +214,8 @@ library RS256V1 {
                         k
                     )
                 ) {
-                    revert(0x00, 0x00)
+                    mstore(0x00, false)
+                    return(0x00, 0x20)
                 }
                 mstore(EM, k)
                 mstore(0x40, add(add(EM, 0x20), k))

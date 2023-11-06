@@ -2,8 +2,9 @@
   "scripts": {
     "tsc": "tsc",
     "ts-node": "ts-node",
-    "RS256v1": "ts-node RS256_v1.ts",
-    "RS256v2": "ts-node RS256_v2.ts"
+    "test": "forge test",
+    "gas-report": "forge test --no-match-contract 'RS256_FIPS_186_4Test' --gas-report",
+    "Check_SigVer15_186_3": "forge test --gas-report"
   },
   "devDependencies": {
     "ts-node": "^10.9.1",

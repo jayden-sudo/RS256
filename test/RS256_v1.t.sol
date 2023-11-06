@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {RS256V1} from "../src/RS256_v1.sol";
+import {RS256Verify} from "../contracts/RS256Verify.sol";
 
 contract RS256Dev {
     function verify(
@@ -11,7 +11,7 @@ contract RS256Dev {
         bytes memory M,
         bytes memory S
     ) external view returns (bool) {
-        return RS256V1.RSASSA_PSS_VERIFY(n, e, M, S);
+        return RS256Verify.RSASSA_PSS_VERIFY(n, e, M, S);
     }
 }
 
