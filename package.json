@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "tsc": "tsc",
+    "ts-node": "ts-node",
+    "RS256v1": "ts-node RS256_v1.ts",
+    "RS256v2": "ts-node RS256_v2.ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}
