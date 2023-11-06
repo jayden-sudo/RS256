@@ -1,6 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
+/**
+ * @title RS256Verify
+ * @author https://github.com/jayden-sudo
+ *
+ * The code strictly follows the RSASSA-PKCS1-v1_5 signature verification operation steps outlined in RFC 8017.
+ * It takes a signature, message, and public key as inputs and verifies if the signature is valid for the
+ * given message using the provided public key.
+ * reference: https://datatracker.ietf.org/doc/html/rfc8017#section-8.1.2
+ *
+ * This code has passed the complete tests of the `Algorithm Validation Testing Requirements`:https://csrc.nist.gov/Projects/Cryptographic-Algorithm-Validation-Program/Digital-Signatures#rsa2vs
+ * `FIPS 186-4` https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/dss/186-3rsatestvectors.zip
+ *
+ * LICENSE: MIT
+ * Copyright (c) 2023 Jayden
+ */
 library RS256Verify {
     /**
      *
