@@ -116,7 +116,7 @@ library RS256Verify {
 
         uint256 PS_ByteLen = k - 54; //k - 19 - 32 - 3, 32: SHA-256 hash length
         uint256 _cursor;
-        assembly {
+        assembly ("memory-safe") {
             // inline RSAVP1 begin
             /* 
                b.  Apply the RSAVP1 verification primitive (Section 5.2.2) to
@@ -251,7 +251,7 @@ library RS256Verify {
             }
         }
         bytes32 H = sha256(M);
-        assembly {
+        assembly ("memory-safe") {
             if sub(H, mload(add(_cursor, 0x14))) {
                 mstore(0x00, false)
                 return(0x00, 0x20)
